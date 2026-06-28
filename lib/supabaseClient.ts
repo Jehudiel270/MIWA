@@ -1,12 +1,9 @@
 import { createClient } from "@supabase/supabase-js";
+import ENV, { validateAll } from "./env";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+validateAll();
 
-if (!supabaseUrl || !supabaseServiceKey) {
-  throw new Error(
-    "Variables d'environnement Supabase manquantes : NEXT_PUBLIC_SUPABASE_URL ou SUPABASE_SERVICE_ROLE_KEY",
-  );
-}
-
-export const supabase = createClient(supabaseUrl, supabaseServiceKey);
+export const supabase = createClient(
+  ENV.NEXT_PUBLIC_SUPABASE_URL!,
+  ENV.SUPABASE_SERVICE_ROLE_KEY!,
+);

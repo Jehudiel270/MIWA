@@ -1,0 +1,319 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                    String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  auth_id               String                 @unique
+  email                 String                 @unique
+  full_name             String?
+  phone_number          String?
+  profile_image_url     String?
+  role                  UserRole               @default(CLIENT)
+  wallet_balance        Float                  @default(0)
+  is_banned             Boolean                @default(false)
+  ban_reason            String?
+  preferred_language    String                 @default("en")
+  created_at            DateTime               @default(now())
+  updated_at            DateTime               @updatedAt
+  
+  favorites             Favorite[]
+  bookings              Booking[]
+  payments              Payment[]
+  reviews               Review[]
+  messages              ContactMessage[]
+  suspensions           UserSuspension[]
+
+  @@index([email])
+  @@index([role])
+  @@index([is_banned])
+}
+
+model Establishment {
+  id                    String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  owner_id              String                 @db.Uuid
+  name                  String
+  establishment_type    EstablishmentType
+  address               String
+  city                  String
+  country               String?
+  latitude              Float?
+  longitude             Float?
+  phone_number          String?
+  email                 String?
+  website               String?
+  description           String?
+  logo_url              String?
+  cover_image_url       String?
+  rating                Float?
+  total_reviews         Int                    @default(0)
+  verification_status   VerificationStatus     @default(PENDING)
+  verification_date     DateTime?
+  is_active             Boolean                @default(true)
+  created_at            DateTime               @default(now())
+  updated_at            DateTime               @updatedAt
+  
+  rooms                 Room[]
+  bookings              Booking[]
+  reviews               Review[]
+  favorites             Favorite[]
+  flags                 EstablishmentFlag[]
+
+  @@index([owner_id])
+  @@index([establishment_type])
+  @@index([city])
+  @@index([verification_status])
+  @@index([is_active])
+}
+
+model Room {
+  id                    String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  establishment_id      String                 @db.Uuid
+  name                  String
+  description           String?
+  capacity              Int
+  price_per_night       Float
+  price_per_hour        Float?
+  image_urls            String[]
+  amenities             String[]
+  is_available          Boolean                @default(true)
+  created_at            DateTime               @default(now())
+  updated_at            DateTime               @updatedAt
+  
+  establishment         Establishment          @relation(fields: [establishment_id], references: [id], onDelete: Cascade)
+  bookings              Booking[]
+
+  @@index([establishment_id])
+}
+
+model Booking {
+  id                    String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id               String                 @db.Uuid
+  room_id               String                 @db.Uuid
+  establishment_id      String                 @db.Uuid
+  check_in              DateTime
+  check_out             DateTime
+  booking_type          BookingType            @default(NIGHT)
+  status                BookingStatus          @default(PENDING)
+  total_price           Float
+  number_of_guests      Int                    @default(1)
+  special_requests      String?
+  created_at            DateTime               @default(now())
+  updated_at            DateTime               @updatedAt
+  
+  user                  User                   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  room                  Room                   @relation(fields: [room_id], references: [id], onDelete: Cascade)
+  establishment         Establishment          @relation(fields: [establishment_id], references: [id], onDelete: Cascade)
+  payment               Payment?
+
+  @@index([user_id])
+  @@index([establishment_id])
+  @@index([status])
+  @@index([check_in])
+}
+
+model Payment {
+  id                    String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  booking_id            String                 @db.Uuid @unique
+  user_id               String                 @db.Uuid
+  amount                Float
+  currency              String                 @default("USD")
+  payment_method        PaymentMethod
+  status                PaymentStatus          @default(PENDING)
+  transaction_id        String?                @unique
+  error_message         String?
+  created_at            DateTime               @default(now())
+  updated_at            DateTime               @updatedAt
+  
+  user                  User                   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  booking               Booking                @relation(fields: [booking_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([status])
+}
+
+model Favorite {
+  id                    String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id               String                 @db.Uuid
+  establishment_id      String                 @db.Uuid
+  created_at            DateTime               @default(now())
+  
+  user                  User                   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  establishment         Establishment          @relation(fields: [establishment_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, establishment_id])
+  @@index([user_id])
+}
+
+model Review {
+  id                    String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id               String                 @db.Uuid
+  establishment_id      String                 @db.Uuid
+  rating                Int
+  comment               String?
+  created_at            DateTime               @default(now())
+  updated_at            DateTime               @updatedAt
+  
+  user                  User                   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  establishment         Establishment          @relation(fields: [establishment_id], references: [id], onDelete: Cascade)
+
+  @@index([establishment_id])
+  @@index([user_id])
+}
+
+model FeedbackSubmission {
+  id                    String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id               String?                @db.Uuid
+  establishment_id      String?                @db.Uuid
+  subject               String
+  message               String
+  category              String?
+  status                FeedbackStatus         @default(NEW)
+  admin_response        String?
+  response_date         DateTime?
+  created_at            DateTime               @default(now())
+  updated_at            DateTime               @updatedAt
+
+  @@index([status])
+  @@index([created_at])
+}
+
+model ContactMessage {
+  id                    String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id               String?                @db.Uuid
+  name                  String?
+  email                 String?
+  subject               String
+  message               String
+  status                MessageStatus          @default(NEW)
+  created_at            DateTime               @default(now())
+  
+  user                  User?                  @relation(fields: [user_id], references: [id], onDelete: SetNull)
+
+  @@index([status])
+  @@index([created_at])
+}
+
+model AdminLog {
+  id                    String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  admin_id              String                 @db.Uuid
+  action                String
+  entity_type           String
+  entity_id             String?
+  details               Json?
+  created_at            DateTime               @default(now())
+
+  @@index([admin_id])
+  @@index([action])
+  @@index([created_at])
+}
+
+model UserSuspension {
+  id                    String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id               String                 @db.Uuid
+  reason                String
+  suspended_by          String                 @db.Uuid
+  created_at            DateTime               @default(now())
+  expires_at            DateTime?
+  
+  user                  User                   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+}
+
+model EstablishmentFlag {
+  id                    String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  establishment_id      String                 @db.Uuid
+  reason                String
+  flagged_by            String                 @db.Uuid
+  status                FlagStatus             @default(PENDING)
+  created_at            DateTime               @default(now())
+  resolved_at           DateTime?
+  
+  establishment         Establishment          @relation(fields: [establishment_id], references: [id], onDelete: Cascade)
+
+  @@index([establishment_id])
+  @@index([status])
+}
+
+model AdminSetting {
+  id                    String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  key                   String                 @unique
+  value                 Json
+  created_at            DateTime               @default(now())
+  updated_at            DateTime               @updatedAt
+}
+
+// Enums
+enum UserRole {
+  CLIENT
+  ADMIN
+}
+
+enum EstablishmentType {
+  HOTEL
+  RESTAURANT
+  COWORKING
+  EVENT_SPACE
+  OTHER
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum BookingType {
+  NIGHT
+  HOUR
+  DAY
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum PaymentMethod {
+  CREDIT_CARD
+  DEBIT_CARD
+  WALLET
+  BANK_TRANSFER
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum FeedbackStatus {
+  NEW
+  IN_PROGRESS
+  RESPONDED
+  CLOSED
+}
+
+enum MessageStatus {
+  NEW
+  READ
+  ARCHIVED
+}
+
+enum FlagStatus {
+  PENDING
+  REVIEWED
+  RESOLVED
+}

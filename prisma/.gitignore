@@ -1,0 +1,8 @@
+# Prisma
+/prisma/migrations
+.env
+.env.local
+.env.*.local
+
+# Keep the schema.prisma file in version control
+!schema.prisma

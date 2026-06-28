@@ -1,7 +1,14 @@
 import { createClient } from "@/lib/supabaseServer";
 
 export async function checkAdminRole() {
-  const supabase = await createClient();
+  let supabase;
+  try {
+    supabase = await createClient();
+  } catch (e) {
+    console.error("supabase init error in checkAdminRole", e);
+    return { isAdmin: false, error: "Supabase initialization error" };
+  }
+
   const { data: authData, error: authError } = await supabase.auth.getUser();
 
   if (authError || !authData.user) {
@@ -29,15 +36,19 @@ export async function logAdminAction(
   details?: Record<string, any>,
   metadata?: Record<string, any>,
 ) {
-  const supabase = await createClient();
-  await supabase.from("admin_logs").insert({
-    admin_id: adminId,
-    action,
-    entity_type: entityType,
-    entity_id: entityId,
-    details: {
-      ...details,
-      ...metadata,
-    },
-  });
+  try {
+    const supabase = await createClient();
+    await supabase.from("admin_logs").insert({
+      admin_id: adminId,
+      action,
+      entity_type: entityType,
+      entity_id: entityId,
+      details: {
+        ...details,
+        ...metadata,
+      },
+    });
+  } catch (e) {
+    console.error("Failed to log admin action", e);
+  }
 }

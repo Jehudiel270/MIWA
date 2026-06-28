@@ -9,10 +9,12 @@ export async function GET(
 ) {
   try {
     const supabase = await createClient();
+    const { id } = await params;
+
     const { data, error } = await supabase
       .from("rooms")
       .select("*")
-      .eq("id", params.id)
+      .eq("id", id)
       .single();
 
     if (error || !data) {

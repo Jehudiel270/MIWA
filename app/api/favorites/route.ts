@@ -31,7 +31,9 @@ export async function GET() {
     }
 
     const establishmentIds =
-      data?.map((favorite) => favorite.establishment.id) ?? [];
+      data
+        ?.map((favorite) => favorite.establishment?.[0]?.id)
+        .filter((id) => id !== undefined && id !== null) ?? [];
     let priceMap: Record<string, number> = {};
 
     if (establishmentIds.length > 0) {
@@ -44,8 +46,9 @@ export async function GET() {
       if (!roomsError && rooms) {
         priceMap = rooms.reduce(
           (acc, room) => {
-            if (!acc[room.establishment_id]) {
-              acc[room.establishment_id] = Number(room.price_per_night || 0);
+            const key = String(room.establishment_id);
+            if (!acc[key]) {
+              acc[key] = Number(room.price_per_night || 0);
             }
             return acc;
           },
@@ -58,8 +61,8 @@ export async function GET() {
       data?.map((favorite) => ({
         ...favorite,
         establishment: {
-          ...favorite.establishment,
-          min_price: priceMap[favorite.establishment.id] ?? null,
+          ...favorite.establishment?.[0],
+          min_price: priceMap[String(favorite.establishment?.[0]?.id)] ?? null,
         },
       })) ?? [];
 

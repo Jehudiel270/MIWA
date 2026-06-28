@@ -18,10 +18,12 @@ export async function GET(
       );
     }
 
+    const { id } = await params;
+
     const { data, error } = await supabase
       .from("hotel_bookings")
       .select("*")
-      .eq("id", params.id)
+      .eq("id", id)
       .eq("client_id", authData.user.id)
       .single();
 

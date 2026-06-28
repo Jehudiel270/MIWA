@@ -110,7 +110,7 @@ export async function logAdminAction(
       action,
       entity_type: entityType,
       entity_id: entityId,
-      details: details ? JSON.stringify(details) : null,
+      details: details ?? undefined,
     },
   });
 }

@@ -1,10 +1,13 @@
-import { PrismaClient } from "@prisma/client";
+// Use runtime require to avoid TypeScript resolving `@prisma/client` types
+// when the generated client files may not be present.
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const PrismaPkg: any = require("@prisma/client");
 
-const globalForPrisma = global as unknown as { prisma: PrismaClient };
+const globalForPrisma = global as unknown as { prisma?: any };
 
 export const prisma =
   globalForPrisma.prisma ||
-  new PrismaClient({
+  new PrismaPkg.PrismaClient({
     log: ["error"],
   });
 

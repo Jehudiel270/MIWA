@@ -37,7 +37,9 @@ export function validateAll() {
     if (v === undefined || v === null || v === "") missing.push(name);
   }
   if (missing.length) {
-    throw new Error(`Missing required environment variables: ${missing.join(", ")}`);
+    throw new Error(
+      `Missing required environment variables: ${missing.join(", ")}`,
+    );
   }
 }
 
